@@ -10,6 +10,7 @@
         <e p="Mike" t="Include">
           <e p="Scripts" t="Include">
             <e p="GenerateBomb.cs" t="Include" />
+            <e p="RandFuncs.cs" t="Include" />
           </e>
         </e>
         <e p="Scripts" t="Include">

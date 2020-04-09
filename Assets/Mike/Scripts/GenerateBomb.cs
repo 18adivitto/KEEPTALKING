@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.SocialPlatforms;
 
 public class GenerateBomb : MonoBehaviour
 {
@@ -21,16 +22,37 @@ public class GenerateBomb : MonoBehaviour
     public List<GameObject> ModulesToSpawn = new List<GameObject>();
     public List<GameObject> SpawnedModules = new List<GameObject>();
     
+    //Strikes
+    public int MaxStrikes = 2;
+    private int CurrentStrikes = 0;
     
+    
+    //EXTERNAL MODULES //
+    
+    //serial number
+    public string SerialN = "";
+    public bool IsEven;
+    public bool HasVowel;
+    public int BatteryNum;
 
-    
+    //indicators
+    public List<string> Indicators = new List<string>();
+    private string[] IndicatorsToAdd = new[] {"SND", "CLR", "CAR","IND","FRQ","SIG","NSA","MSA","TRN","BOB","FRK"};
+    private int MaxIndicators = 5;
+    private float LikelihoodToBeOn = .6f;
+    public List<Indicator> AddedIndicators = new List<Indicator>();
     // Start is called before the first frame update
     void Start()
     {
         PickModules();
         //shuffle order of where each module is spawned
-        Shuffle(LocationsToSpawn);
+        RandFuncs.Shuffle(LocationsToSpawn);
+        
+        //Construct bomb
         SpawnModules();
+        CreateSerial();
+        AddIndicators();
+        AddBatteries();
     }
 
     // Update is called once per frame
@@ -38,6 +60,8 @@ public class GenerateBomb : MonoBehaviour
     {
         //restart for debugging
         Restart();
+
+        Debug.Log(SerialN);
     }
 
     //choose modules to spawn from 
@@ -59,7 +83,7 @@ public class GenerateBomb : MonoBehaviour
         for(int i = 0; i < LocationsToSpawn.Length; i++)
         {
             int index = LocationsToSpawn[i];
-            Debug.Log(index);
+            //Debug.Log(index);
             Vector3 location = Locations[index];
             GameObject module = null;
             if (i < ModulesToSpawn.Count)
@@ -87,16 +111,7 @@ public class GenerateBomb : MonoBehaviour
         timer.transform.parent = transform;
     }
     
-    //randomize order
-    public static void Shuffle<T>(T[] deck)
-    {
-        for (int i = deck.Length - 1; i >= 1; i--) {
-            int randomIndex = Random.Range(0, i + 1);
-            T swapTemp = deck[randomIndex];
-            deck[randomIndex] = deck[i];
-            deck[i] = swapTemp;
-        }
-    }
+    
 
     //debugging restart scene
     public void Restart()
@@ -107,4 +122,130 @@ public class GenerateBomb : MonoBehaviour
         }
         
     }
+
+    //strike occurs
+    public void BombStrikes()
+    {
+        CurrentStrikes++;
+        if (CurrentStrikes > MaxStrikes)
+        {
+            //Game Over
+            GameOver();
+        }
+    }
+
+    public void GameOver()
+    {
+        
+    }
+    List<char> serial = new List<char>();
+    public void CreateSerial()
+    {
+        //randomly select five chars [at least 1 number and 2 letters]
+        
+        
+        //guarantee two letters and one number
+        serial.Add(RandomLetter());
+        serial.Add(RandomLetter());
+        serial.Add(RandomNum(false));
+        
+        //Pick 2 more nums or letters
+        for (int i = 0; i < 2; i++)
+        {
+            
+            if (Random.Range(0f, 1f) < .5f)
+            {
+                serial.Add(RandomLetter());
+            }
+            else
+            {
+                serial.Add(RandomNum(false));
+            }
+        }
+        
+        //shuffle the first 5 chars
+        RandFuncs.Shuffle(serial);
+        
+        //add final number to the string and check if it is even
+        serial.Add(RandomNum(true));
+        foreach (char c in serial)
+        {
+            SerialN += c;
+        }
+    }
+
+    public char RandomLetter()
+    {
+        int letter = Random.Range(0, 26);
+        
+        //Repick a number that does not correspond with the letter Y
+        while (letter == 25)
+        {
+            letter = Random.Range(0, 26);
+        }
+        //letter
+        char c = (char) ('A' + letter);
+        //check if is a vowel
+        if (c == 'A' || c == 'E' || c == 'I' || c == 'O' || c == 'U')
+        {
+            HasVowel = true;
+        }
+        return c;
+    }
+    
+    
+    //for serialization
+        
+    public char RandomNum(bool checkForEven)
+    {
+        int num = Random.Range(0, 10);
+        if (checkForEven && num % 2 == 0)
+        {
+            IsEven = true;
+        }
+        Debug.Log(num.ToString());
+        Debug.Log(num);
+        return num.ToString()[0];
+    }
+
+    void AddIndicators()
+    {
+        foreach (string indicator in IndicatorsToAdd)
+        {
+            Indicators.Add(indicator);
+        }
+        
+        //min range is 1 to MaxIndicators
+        int indicNums = Random.Range(1, MaxIndicators + 1);
+        
+        //create the number of indicators and add to list
+        for(int i = 0; i < indicNums; i++)
+        {
+            Indicator indic = new Indicator();
+            //pick one of the indicator strings
+            int index = Random.Range(0, Indicators.Count);
+            string str = Indicators[index];
+            Indicators.Remove(str);
+            indic.str = str;
+            //randomize if light is on or off
+            indic.IsOn = Random.Range(0f, 1f) < LikelihoodToBeOn;
+            AddedIndicators.Add(indic);
+        }
+    }
+    
+    void AddBatteries()
+    {
+        //randomize batteries-0 to 2 batteries-currently equal likelihood
+        int batteryNum = Random.Range(0, 3);
+        BatteryNum = batteryNum;
+
+    }
+    
+    
+}
+
+public struct Indicator
+{
+    public string str;
+    public bool IsOn;
 }
